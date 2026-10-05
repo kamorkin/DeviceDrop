@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 )
 
 func handleMessage(receivedType MessageType, payload []byte)  {
@@ -19,5 +20,21 @@ func handleMessage(receivedType MessageType, payload []byte)  {
 }
 
 func main() {
-	runReceive()
+	if len(os.Args) < 2 {
+		fmt.Println("use: go run . send | receive")
+		return
+	}
+
+	mode := os.Args[1]
+
+	switch mode {
+	case "receive":
+		runReceiver()
+
+	case "send":
+		runSender()
+
+	default:
+		fmt.Println("unknown mode")
+	}
 }

@@ -13,6 +13,21 @@ const (
 	messageTypeFile MessageType = 2
 )
 
+func writeMessage(conn net.Conn, messageType MessageType, payload []byte) error {
+	size := uint64(len(payload))
+
+	header := make([]byte, 8)
+	binary.BigEndian.PutUint64(header, size)
+
+	typeData := []byte{byte(messageType)}
+
+	message := append(typeData, header...)
+	message = append(message, payload...)
+
+	_, err := conn.Write(message)
+	return err
+}
+
 func readMessage(conn net.Conn) (MessageType, []byte, error) {
 	messageType := make([]byte, 1)
 
