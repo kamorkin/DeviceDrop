@@ -1,48 +1,10 @@
 package main
 
 import (
-	"encoding/binary"
 	"fmt"
-	"io"
 	"log"
 	"net"
 )
-
-type MessageType byte
-
-const (
-	messageTypeText MessageType = 1
-	messageTypeFile MessageType = 2
-)
-
-func readMessage(conn net.Conn) (MessageType, []byte, error) {
-	messageType := make([]byte, 1)
-
-	_, err := io.ReadFull(conn, messageType)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	header := make([]byte, 8)
-
-	_, err = io.ReadFull(conn, header)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	size := binary.BigEndian.Uint64(header)
-
-	payload := make([]byte, size)
-
-	_, err = io.ReadFull(conn, payload)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	receivedType := MessageType(messageType[0])
-
-	return receivedType, payload, nil
-}
 
 func handleMessage(receivedType MessageType, payload []byte)  {
 	switch receivedType {
