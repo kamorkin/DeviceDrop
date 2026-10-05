@@ -44,6 +44,20 @@ func readMessage(conn net.Conn) (MessageType, []byte, error) {
 	return receivedType, payload, nil
 }
 
+func handleMessage(receivedType MessageType, payload []byte)  {
+	switch receivedType {
+	case messageTypeText:
+		fmt.Println("Text message:")
+		fmt.Println(string(payload))
+
+	case messageTypeFile:
+		fmt.Println("File message")
+
+	default:
+		fmt.Println("Unknown message type")
+	}
+}
+
 func main() {
 	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
@@ -60,19 +74,9 @@ func main() {
 	fmt.Println("Device connected")
 
 	receivedType, payload, err := readMessage(conn)
-	if err != nil {
+		if err != nil {
 		log.Fatal(err)
 	}
 
-	switch receivedType {
-	case messageTypeText:
-		fmt.Println("Text message:")
-		fmt.Println(string(payload))
-
-	case messageTypeFile:
-		fmt.Println("File message")
-
-	default:
-		fmt.Println("Unknown message type")
-	}
+	handleMessage(receivedType, payload)
 }
