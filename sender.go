@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/binary"
 	"fmt"
 	"log"
@@ -21,36 +22,74 @@ func runSender() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer conn.Close()
 
 	fmt.Println("Device connected")
-	/*
-	text := "hello"
-	payload := []byte(text)
 
-	err = writeMessage(conn, messageTypeText, payload)
-	if err != nil {
-		log.Fatal(err)
-	}
-	*/
+	scanner := bufio.NewScanner(os.Stdin)
 
+	for {
+		fmt.Print("Command (text/file/exit): ")
 
-	fileName := "test.txt"
-	fileNameData := []byte(fileName)
-	fileNameSize := len(fileNameData)
-	fileNameHeader := make([]byte, 2)
-	binary.BigEndian.PutUint16(fileNameHeader, uint16(fileNameSize))
+		if !scanner.Scan() {
+			return
+		}
 
-	fileData, err := os.ReadFile(fileName)
-		if err != nil {
-		log.Fatal(err)
-	}
+		command := scanner.Text()
 
-	filePayload := append(fileNameHeader, fileNameData...)
-	filePayload = append(filePayload, fileData...)
+		switch command {
+		case "text":
+			fmt.Print("Text: ")
 
-	err = writeMessage(conn, messageTypeFile, filePayload)
-		if err != nil {
-		log.Fatal(err)
+			if !scanner.Scan() {
+				return
+			}
 
+			text := scanner.Text()
+
+			err = writeMessage(conn, messageTypeText, []byte(text))
+			if err != nil {
+				fmt.Println("Failed to send message:", err)
+				return
+			}
+
+		case "file":
+			fmt.Print("File name: ")
+
+			if !scanner.Scan() {
+				return
+			}
+
+			fileName := scanner.Text()
+			fileNameData := []byte(fileName)
+			fileNameSize := len(fileNameData)
+
+			fileNameHeader := make([]byte, 2)
+			binary.BigEndian.PutUint16(
+				fileNameHeader,
+				uint16(fileNameSize),
+			)
+
+			fileData, err := os.ReadFile(fileName)
+			if err != nil {
+				fmt.Println("Failed to read file:", err)
+				continue
+			}
+
+			filePayload := append(fileNameHeader, fileNameData...)
+			filePayload = append(filePayload, fileData...)
+
+			err = writeMessage(conn, messageTypeFile, filePayload)
+			if err != nil {
+				fmt.Println("Failed to send file:", err)
+				return
+			}
+
+		case "exit":
+			return
+
+		default:
+			fmt.Println("Unknown command")
+		}
 	}
 }

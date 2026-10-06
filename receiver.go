@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
 )
@@ -18,10 +19,13 @@ func runReceiver()  {
 	}
 	defer conn.Close()
 
+	for {
 	receivedType, payload, err := readMessage(conn)
 		if err != nil {
-		log.Fatal(err)
+		fmt.Println("Connection closed:", err)
+		break
 	}
 
 	handleMessage(receivedType, payload)
+	}
 }

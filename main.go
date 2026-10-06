@@ -12,17 +12,17 @@ func handleMessage(receivedType MessageType, payload []byte)  {
 		fmt.Println(string(payload))
 
 	case messageTypeFile:
-		saveName, fileData, err := parseFilePayload(payload) 
-		if err != nil {
-		fmt.Println("Failed to parse file:", err)
-	return
-}
-	err = os.WriteFile(saveName, fileData, 0644)
-	if err != nil {
-	fmt.Println("Failed to save file:", err)
-	return
-}
-fmt.Println("File saved:", saveName)
+// 		saveName, fileData, err := parseFilePayload(payload) 
+// 		if err != nil {
+// 		fmt.Println("Failed to parse file:"/*, err*/)
+// 	return
+// }
+// 	err = os.WriteFile(saveName, fileData, 0644)
+// 	if err != nil {
+// 	fmt.Println("Failed to save file:", err)
+// 	return
+// }
+fmt.Println("File saved:")
 
 
 	default:

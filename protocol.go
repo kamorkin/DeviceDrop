@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"errors"
 	"io"
 	"net"
 )
@@ -14,6 +13,7 @@ const (
 	messageTypeFile MessageType = 2
 )
 
+/*
 func parseFilePayload(payload []byte) (string, []byte, error) {
 		if len(payload) < 2 {
 		return "", nil, errors.New("invalid file payload")
@@ -30,7 +30,7 @@ func parseFilePayload(payload []byte) (string, []byte, error) {
 	saveName := "received_" + fileName
 	return saveName, fileData, nil
 }
-
+*/
 func writeMessage(conn net.Conn, messageType MessageType, payload []byte) error {
 	size := uint64(len(payload))
 
