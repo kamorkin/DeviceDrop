@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func connectToDevice(address string) (net.Conn, error)  {
+func connectToDevice(address string) (net.Conn, error) {
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		return nil, err

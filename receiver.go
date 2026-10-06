@@ -19,17 +19,20 @@ func runReceiver() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		go handleConnection(conn)
+	}
+}
 
-		for {
-			receivedType, payload, err := readMessage(conn)
-			if err != nil {
-				fmt.Println("Connection closed:", err)
-				break
-			}
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
 
-			handleMessage(receivedType, payload)
+	for {
+		receivedType, payload, err := readMessage(conn)
+		if err != nil {
+			fmt.Println("Connection closed:", err)
+			break
 		}
 
-		conn.Close()
+		handleMessage(receivedType, payload)
 	}
 }
