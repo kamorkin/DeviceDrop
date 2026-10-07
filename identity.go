@@ -76,3 +76,12 @@ func loadOrCreateDeviceID() (uuid.UUID, error) {
 
 	return deviceID, nil
 }
+
+func getDeviceName() (string, error) {
+	name, err := os.Hostname()
+	if err != nil {
+		return "", err
+	}
+
+	return name, nil
+}

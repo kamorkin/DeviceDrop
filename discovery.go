@@ -64,7 +64,6 @@ func runDiscoveryListener() {
 		fmt.Println(tcpAddress)
 	}
 
-
 }
 
 func sendDiscoveryAnnouncement() {

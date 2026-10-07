@@ -53,10 +53,16 @@ func main() {
 
 	case "identity-test":
 		deviceID, err := loadOrCreateDeviceID()
-		if err != nil{
+		if err != nil {
 			log.Fatal(err)
 		}
 
+		deviceName, err := getDeviceName()
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		fmt.Println(deviceName)
 		fmt.Println(deviceID)
 
 	default:
