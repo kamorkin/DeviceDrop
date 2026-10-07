@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -49,6 +50,14 @@ func main() {
 
 	case "discovery-send":
 		sendDiscoveryAnnouncement()
+
+	case "identity-test":
+		deviceID, err := loadOrCreateDeviceID()
+		if err != nil{
+			log.Fatal(err)
+		}
+
+		fmt.Println(deviceID)
 
 	default:
 		fmt.Println("unknown mode")

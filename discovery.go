@@ -2,12 +2,19 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func runDiscoveryListener() {
+	deviceID, err := loadOrCreateDeviceID()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	addr := &net.UDPAddr{
 		Port: 9999,
@@ -33,7 +40,7 @@ func runDiscoveryListener() {
 		packetData := buffer[:n]
 
 		parts := strings.Split(string(packetData), "|")
-		if len(parts) != 2 {
+		if len(parts) != 3 {
 			continue
 		}
 
@@ -41,15 +48,31 @@ func runDiscoveryListener() {
 			continue
 		}
 
-		tcpPort := parts[1]
+		remoteDeviceID, err := uuid.Parse(parts[1])
+		if err != nil {
+			continue
+		}
+
+		if remoteDeviceID == deviceID {
+			continue
+		}
+
+		tcpPort := parts[2]
 
 		tcpAddress := net.JoinHostPort(addr.IP.String(), tcpPort)
 
 		fmt.Println(tcpAddress)
 	}
+
+
 }
 
 func sendDiscoveryAnnouncement() {
+	deviceID, err := loadOrCreateDeviceID()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	broadcastAddr := &net.UDPAddr{
 		IP:   net.IPv4bcast,
 		Port: 9999,
@@ -62,7 +85,7 @@ func sendDiscoveryAnnouncement() {
 	}
 	defer conn.Close()
 
-	announcement := "DEVICEDROP|8080"
+	announcement := "DEVICEDROP|" + deviceID.String() + "|8080"
 	packetData := []byte(announcement)
 
 	for {
