@@ -31,7 +31,7 @@ func handleMessage(receivedType MessageType, payload []byte) {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("use: go run . send | receive")
+		fmt.Println("use: go run . send | receive | discovery-listen | discovery-send")
 		return
 	}
 
@@ -43,6 +43,12 @@ func main() {
 
 	case "send":
 		runSender()
+
+	case "discovery-listen":
+		runDiscoveryListener()
+
+	case "discovery-send":
+		sendDiscoveryAnnouncement()
 
 	default:
 		fmt.Println("unknown mode")
