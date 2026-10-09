@@ -65,6 +65,21 @@ func main() {
 		fmt.Println(deviceName)
 		fmt.Println(deviceID)
 
+	case "pairing-test":
+	testID := "123e4567-e89b-42d3-a456-426614174000"	
+
+    err := addTrustedDevice(testID)
+    if err != nil {
+        log.Fatal("Failed to add device:", err)
+    }
+
+    loadedDevices, err := loadTrustedDevices()
+    if err != nil {
+        log.Fatal("Failed to load devices:", err)
+    }
+    fmt.Printf("Trusted devices: %+v\n", loadedDevices)
+
+
 	default:
 		fmt.Println("unknown mode")
 	}

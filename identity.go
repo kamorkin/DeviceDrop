@@ -9,14 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func loadOrCreateDeviceID() (uuid.UUID, error) {
+func getAppDirectory() (string, error) {
 	var appDirectory string
 
 	switch runtime.GOOS {
 	case "windows":
 		directoryPath := os.Getenv("LOCALAPPDATA")
 		if directoryPath == "" {
-			return uuid.Nil, fmt.Errorf("LOCALAPPDATA is not set")
+			return "", fmt.Errorf("LOCALAPPDATA is not set")
 		}
 
 		appDirectory = filepath.Join(directoryPath, "DeviceDrop")
@@ -24,7 +24,7 @@ func loadOrCreateDeviceID() (uuid.UUID, error) {
 	case "darwin":
 		directoryPath, err := os.UserHomeDir()
 		if err != nil {
-			return uuid.Nil, err
+			return "", err
 		}
 
 		appDirectory = filepath.Join(
@@ -35,10 +35,20 @@ func loadOrCreateDeviceID() (uuid.UUID, error) {
 		)
 
 	default:
-		return uuid.Nil, fmt.Errorf("unsupported OS: %s", runtime.GOOS)
+		return "", fmt.Errorf("unsupported OS: %s", runtime.GOOS)
 	}
 
-	err := os.MkdirAll(appDirectory, 0755)
+	return appDirectory, nil
+}
+
+func loadOrCreateDeviceID() (uuid.UUID, error) {
+
+	appDirectory, err := getAppDirectory()
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	err = os.MkdirAll(appDirectory, 0755)
 	if err != nil {
 		return uuid.Nil, err
 	}

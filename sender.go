@@ -32,6 +32,9 @@ func runSender() {
 		fmt.Print("Command (text/file/exit): ")
 
 		if !scanner.Scan() {
+			if err := scanner.Err(); err != nil {
+				fmt.Println("Failed to read input:", err)
+			}
 			return
 		}
 
@@ -42,6 +45,9 @@ func runSender() {
 			fmt.Print("Text: ")
 
 			if !scanner.Scan() {
+				if err := scanner.Err(); err != nil {
+					fmt.Println("Failed to read input:", err)
+				}
 				return
 			}
 
@@ -57,6 +63,9 @@ func runSender() {
 			fmt.Print("File name: ")
 
 			if !scanner.Scan() {
+				if err := scanner.Err(); err != nil {
+					fmt.Println("Failed to read input:", err)
+				}
 				return
 			}
 
