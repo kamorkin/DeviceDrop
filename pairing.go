@@ -1,7 +1,11 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"crypto/rand"
 	"encoding/json"
+	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 
@@ -10,6 +14,11 @@ import (
 
 type TrustedDevice struct {
 	ID string `json:"id"`
+	Name             string `json:"name"`
+	KeyAlgorithm     string `json:"key_algorithm"`
+	PublicKey        string `json:"public_key"`
+	ClipboardSync    bool   `json:"clipboard_sync"`
+	AutoReceiveFiles bool   `json:"auto_receive_files"`
 }
 
 type TrustedDevices struct {
@@ -97,7 +106,7 @@ func addTrustedDevice(deviceID string) error {
 	}
 
 	deviceID = parseID.String()
-	
+
 	devices, err := loadTrustedDevices()
 	if err != nil {
 		return err
@@ -110,4 +119,38 @@ func addTrustedDevice(deviceID string) error {
 	devices.Devices = append(devices.Devices, TrustedDevice{ID: deviceID})
 
 	return saveTrustedDevices(devices)
+}
+
+func sendPairRequest(address string) error {
+    conn, err := net.Dial("tcp", address)
+    if err != nil {
+        return err
+    }
+    defer conn.Close()
+
+    if err := writeMessage(conn, messageTypePairRequest, nil); err != nil {
+        return err
+    }
+
+    responseType, _, err := readMessage(conn)
+    if err != nil {
+        return err
+    }
+
+    switch responseType {
+    case messageTypePairAccept:
+        fmt.Println("Pairing accepted")
+    case messageTypePairReject:
+        fmt.Println("Pairing rejected")
+    default:
+        return fmt.Errorf("unexpected response: %d", responseType)
+    }
+
+    return nil
+}
+
+func generateDeviceKeys() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+
+	return publicKey, privateKey, err
 }

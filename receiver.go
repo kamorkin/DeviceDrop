@@ -28,11 +28,12 @@ func handleConnection(conn net.Conn) {
 
 	for {
 		receivedType, payload, err := readMessage(conn)
+
 		if err != nil {
 			fmt.Println("Connection closed:", err)
 			break
 		}
 
-		handleMessage(receivedType, payload)
+		handleMessage(conn, receivedType, payload)
 	}
 }

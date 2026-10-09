@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"errors"
 	"io"
@@ -10,8 +11,12 @@ import (
 type MessageType byte
 
 const (
-	messageTypeText MessageType = 1
-	messageTypeFile MessageType = 2
+	maxMessageSize                     = 10 * 1024 * 1024
+	messageTypeText        MessageType = 1
+	messageTypeFile        MessageType = 2
+	messageTypePairRequest MessageType = 3
+	messageTypePairAccept  MessageType = 4
+	messageTypePairReject  MessageType = 5
 )
 
 func parseFilePayload(payload []byte) (string, []byte, error) {
@@ -42,7 +47,8 @@ func writeMessage(conn net.Conn, messageType MessageType, payload []byte) error 
 	message := append(typeData, header...)
 	message = append(message, payload...)
 
-	_, err := conn.Write(message)
+	reader := bytes.NewReader(message)
+	_, err := io.Copy(conn, reader)
 	return err
 }
 
@@ -62,7 +68,9 @@ func readMessage(conn net.Conn) (MessageType, []byte, error) {
 	}
 
 	size := binary.BigEndian.Uint64(header)
-
+	if size > maxMessageSize {
+		return 0, nil, errors.New("message too large")
+	}
 	payload := make([]byte, size)
 
 	_, err = io.ReadFull(conn, payload)
@@ -71,6 +79,16 @@ func readMessage(conn net.Conn) (MessageType, []byte, error) {
 	}
 
 	receivedType := MessageType(messageType[0])
+
+	switch receivedType {
+	case messageTypeText,
+		messageTypeFile,
+		messageTypePairRequest,
+		messageTypePairAccept,
+		messageTypePairReject:
+	default:
+		return 0, nil, errors.New("unknown message type")
+	}
 
 	return receivedType, payload, nil
 }
