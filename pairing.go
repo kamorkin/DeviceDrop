@@ -3,13 +3,16 @@ package main
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
 	"path/filepath"
 
 	"github.com/google/uuid"
+	"github.com/zalando/go-keyring"
 )
 
 type TrustedDevice struct {
@@ -150,7 +153,34 @@ func sendPairRequest(address string) error {
 }
 
 func generateDeviceKeys() (ed25519.PublicKey, ed25519.PrivateKey, error) {
-	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+    publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+    if err != nil {
+        return nil, nil, err
+    }
 
-	return publicKey, privateKey, err
+    return publicKey, privateKey, nil
+}
+
+func saveDevicePrivateKey(privateKey ed25519.PrivateKey) error {
+	secret:= base64.StdEncoding.EncodeToString(privateKey)
+
+	err := keyring.Set("DeviceDrop", "device-private-key", secret)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func loadDevicePrivateKey() (ed25519.PrivateKey, error) {
+	secret, err := keyring.Get("DeviceDrop", "device-private-key")
+
+	keyBytes, err := base64.StdEncoding.DecodeString(secret)
+	if err != nil {
+		return nil, err
+	}
+	
+	if len(keyBytes) != ed25519.PrivateKeySize {
+		return nil, errors.New("Invalid private key size")
+	}
+	return ed25519.PrivateKey(keyBytes), nil
 }

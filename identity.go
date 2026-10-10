@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/ed25519"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 
 	"github.com/google/uuid"
+	"github.com/zalando/go-keyring"
 )
 
 func getAppDirectory() (string, error) {
@@ -94,4 +97,30 @@ func getDeviceName() (string, error) {
 	}
 
 	return name, nil
+}
+
+func loadOrCreateDeviceIdentity() (ed25519.PublicKey, ed25519.PrivateKey, error) {
+	privateKey, err := loadDevicePrivateKey()
+
+	if errors.Is(err, keyring.ErrNotFound) {
+		publicKey, privateKey, err := generateDeviceKeys()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = saveDevicePrivateKey(privateKey)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return publicKey, privateKey, nil
+	}
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	publicKey := privateKey.Public().(ed25519.PublicKey)
+
+	return publicKey, privateKey, nil
 }
