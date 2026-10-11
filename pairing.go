@@ -16,7 +16,7 @@ import (
 )
 
 type TrustedDevice struct {
-	ID string `json:"id"`
+	ID               string `json:"id"`
 	Name             string `json:"name"`
 	KeyAlgorithm     string `json:"key_algorithm"`
 	PublicKey        string `json:"public_key"`
@@ -125,44 +125,44 @@ func addTrustedDevice(deviceID string) error {
 }
 
 func sendPairRequest(address string) error {
-    conn, err := net.Dial("tcp", address)
-    if err != nil {
-        return err
-    }
-    defer conn.Close()
+	conn, err := net.Dial("tcp", address)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
 
-    if err := writeMessage(conn, messageTypePairRequest, nil); err != nil {
-        return err
-    }
+	if err := writeMessage(conn, messageTypePairRequest, nil); err != nil {
+		return err
+	}
 
-    responseType, _, err := readMessage(conn)
-    if err != nil {
-        return err
-    }
+	responseType, _, err := readMessage(conn)
+	if err != nil {
+		return err
+	}
 
-    switch responseType {
-    case messageTypePairAccept:
-        fmt.Println("Pairing accepted")
-    case messageTypePairReject:
-        fmt.Println("Pairing rejected")
-    default:
-        return fmt.Errorf("unexpected response: %d", responseType)
-    }
+	switch responseType {
+	case messageTypePairAccept:
+		fmt.Println("Pairing accepted")
+	case messageTypePairReject:
+		fmt.Println("Pairing rejected")
+	default:
+		return fmt.Errorf("unexpected response: %d", responseType)
+	}
 
-    return nil
+	return nil
 }
 
 func generateDeviceKeys() (ed25519.PublicKey, ed25519.PrivateKey, error) {
-    publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
-    if err != nil {
-        return nil, nil, err
-    }
+	publicKey, privateKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		return nil, nil, err
+	}
 
-    return publicKey, privateKey, nil
+	return publicKey, privateKey, nil
 }
 
 func saveDevicePrivateKey(privateKey ed25519.PrivateKey) error {
-	secret:= base64.StdEncoding.EncodeToString(privateKey)
+	secret := base64.StdEncoding.EncodeToString(privateKey)
 
 	err := keyring.Set("DeviceDrop", "device-private-key", secret)
 	if err != nil {
@@ -173,12 +173,15 @@ func saveDevicePrivateKey(privateKey ed25519.PrivateKey) error {
 
 func loadDevicePrivateKey() (ed25519.PrivateKey, error) {
 	secret, err := keyring.Get("DeviceDrop", "device-private-key")
+	if err != nil {
+		return nil, err
+	}
 
 	keyBytes, err := base64.StdEncoding.DecodeString(secret)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if len(keyBytes) != ed25519.PrivateKeySize {
 		return nil, errors.New("Invalid private key size")
 	}

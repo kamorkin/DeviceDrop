@@ -2,11 +2,15 @@ package main
 
 import (
 	"crypto/ed25519"
+	"crypto/rand"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"math/big"
 	"os"
 	"path/filepath"
 	"runtime"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/zalando/go-keyring"
@@ -123,4 +127,44 @@ func loadOrCreateDeviceIdentity() (ed25519.PublicKey, ed25519.PrivateKey, error)
 	publicKey := privateKey.Public().(ed25519.PublicKey)
 
 	return publicKey, privateKey, nil
+}
+
+func createDeviceCertificate(
+	publicKey ed25519.PublicKey,
+	privateKey ed25519.PrivateKey,
+) ([]byte, error) {
+	now := time.Now()
+	max := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, max)
+	if err != nil {
+		return nil, err
+	}
+
+	serialNumber.Add(serialNumber, big.NewInt(1))
+
+	template := &x509.Certificate{
+		SerialNumber: serialNumber,
+		NotBefore:    now,
+		NotAfter:     now.AddDate(1, 0, 0),
+
+		KeyUsage: x509.KeyUsageDigitalSignature,
+
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+			x509.ExtKeyUsageClientAuth,
+		},
+	}
+
+	certificate, err := x509.CreateCertificate(
+		rand.Reader,
+		template,
+		template,
+		publicKey,
+		privateKey,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return certificate, nil
 }
