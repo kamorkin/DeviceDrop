@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +12,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/google/uuid"
 	"github.com/zalando/go-keyring"
 )
 
@@ -103,12 +103,14 @@ func isTrustedDevice(devices TrustedDevices, deviceID string) bool {
 }
 
 func addTrustedDevice(deviceID string) error {
-	parseID, err := uuid.Parse(deviceID)
+	decodedID, err := hex.DecodeString(deviceID)
 	if err != nil {
 		return err
 	}
 
-	deviceID = parseID.String()
+	if len(decodedID) != 32 {
+		return fmt.Errorf("invalid device ID length")
+	}
 
 	devices, err := loadTrustedDevices()
 	if err != nil {

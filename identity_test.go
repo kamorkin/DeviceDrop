@@ -50,3 +50,28 @@ func TestDeviceCertificate(t *testing.T) {
 
 	t.Log("Certificate serial number:", certificate.SerialNumber)
 }
+
+func TestDeviceID(t *testing.T) {
+	publicKey, _, err := loadOrCreateDeviceIdentity()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	firstID := getDeviceID(publicKey)
+	secondID := getDeviceID(publicKey)
+
+	if firstID != secondID {
+		t.Fatal("Device ID changed")
+	}
+
+	otherPublicKey, _, err := generateDeviceKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherID := getDeviceID(otherPublicKey)
+
+	if firstID == otherID {
+		t.Fatal("Different public keys produced the same Device ID")
+	}
+}

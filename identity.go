@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -12,7 +13,6 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/zalando/go-keyring"
 )
 
@@ -48,50 +48,10 @@ func getAppDirectory() (string, error) {
 	return appDirectory, nil
 }
 
-func loadOrCreateDeviceID() (uuid.UUID, error) {
+func getDeviceID(publicKey ed25519.PublicKey) string {
+	hash := sha256.Sum256(publicKey)
 
-	appDirectory, err := getAppDirectory()
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	err = os.MkdirAll(appDirectory, 0755)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	deviceIDPath := filepath.Join(appDirectory, "device_id")
-
-	data, err := os.ReadFile(deviceIDPath)
-
-	if err == nil {
-		parsedID, err := uuid.Parse(string(data))
-		if err != nil {
-			return uuid.Nil, err
-		}
-
-		return parsedID, nil
-	}
-
-	if !os.IsNotExist(err) {
-		return uuid.Nil, err
-	}
-
-	deviceID, err := uuid.NewRandom()
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	err = os.WriteFile(
-		deviceIDPath,
-		[]byte(deviceID.String()),
-		0600,
-	)
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	return deviceID, nil
+	return fmt.Sprintf("%x", hash)
 }
 
 func getDeviceName() (string, error) {
@@ -107,6 +67,22 @@ func loadOrCreateDeviceIdentity() (ed25519.PublicKey, ed25519.PrivateKey, error)
 	privateKey, err := loadDevicePrivateKey()
 
 	if errors.Is(err, keyring.ErrNotFound) {
+		appDirectory, err := getAppDirectory()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		deviceIDPath := filepath.Join(appDirectory, "device_id")
+
+		_, err = os.Stat(deviceIDPath)
+		if err == nil {
+			fmt.Println("UUID устройства существует")
+		} else if os.IsNotExist(err) {
+			fmt.Println("UUID устройства отсутствует")
+		} else {
+			return nil, nil, err
+		}
+
 		publicKey, privateKey, err := generateDeviceKeys()
 		if err != nil {
 			return nil, nil, err
