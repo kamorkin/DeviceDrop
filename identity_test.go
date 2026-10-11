@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"crypto/ed25519"
+	"crypto/tls"
 	"crypto/x509"
 	"testing"
 )
@@ -73,5 +74,53 @@ func TestDeviceID(t *testing.T) {
 
 	if firstID == otherID {
 		t.Fatal("Different public keys produced the same Device ID")
+	}
+
+}
+
+func TestTLSConfig(t *testing.T) {
+	config, err := createTLSConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if config.MinVersion != tls.VersionTLS13 {
+		t.Fatal("TLS 1.3 is not configured")
+	}
+
+	if len(config.Certificates) != 1 {
+		t.Fatal("Expected one TLS certificate")
+	}
+}
+
+func TestVerifyDevicePublicKey(t *testing.T) {
+	publicKey, privateKey, err := generateDeviceKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	certificateData, err := createDeviceCertificate(publicKey, privateKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	certificate, err := x509.ParseCertificate(certificateData)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = verifyDevicePublicKey(certificate, publicKey)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	otherPublicKey, _, err := generateDeviceKeys()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = verifyDevicePublicKey(certificate, otherPublicKey)
+	if err == nil {
+		t.Fatal("Expected error for untrusted public key")
 	}
 }

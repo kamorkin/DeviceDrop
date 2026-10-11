@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -143,4 +145,53 @@ func createDeviceCertificate(
 	}
 
 	return certificate, nil
+}
+
+func loadDeviceTLSCertificate() (tls.Certificate, error) {
+	publicKey, privateKey, err := loadOrCreateDeviceIdentity()
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	certificateData, err := createDeviceCertificate(publicKey, privateKey)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+
+	certificate := tls.Certificate{
+		Certificate: [][]byte{certificateData},
+		PrivateKey:  privateKey,
+	}
+
+	return certificate, nil
+}
+
+func createTLSConfig() (*tls.Config, error) {
+	certificate, err := loadDeviceTLSCertificate()
+	if err != nil {
+		return nil, err
+	}
+
+	config := &tls.Config{
+		MinVersion: tls.VersionTLS13,
+		Certificates: []tls.Certificate{
+			certificate,
+		},
+	}
+
+	return config, nil
+}
+
+func verifyDevicePublicKey(certificate *x509.Certificate,
+	trustedPublicKey ed25519.PublicKey) error {
+	publicKey, ok := certificate.PublicKey.(ed25519.PublicKey)
+	if !ok {
+		return errors.New("certificate public key is not Ed25519")
+	}
+
+	if !bytes.Equal(publicKey, trustedPublicKey) {
+		return errors.New("device public key does not match trusted key")
+	}
+
+	return nil
 }

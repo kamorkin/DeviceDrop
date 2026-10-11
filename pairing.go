@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
@@ -67,6 +68,39 @@ func loadTrustedDevices() (TrustedDevices, error) {
 	}
 
 	return decodeTrustedDevices(data)
+}
+
+func decodeDevicePublicKey(encodedKey string) (ed25519.PublicKey, error) {
+	keyBytes, err := base64.StdEncoding.DecodeString(encodedKey)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(keyBytes) != ed25519.PublicKeySize {
+		return nil, errors.New("invalid public key size")
+	}
+
+	return ed25519.PublicKey(keyBytes), nil
+}
+
+func findTrustedDeviceByPublicKey(publicKey ed25519.PublicKey) (bool, error) {
+	devices, err := loadTrustedDevices()
+	if err != nil {
+		return false, err
+	}
+
+	for _, device := range devices.Devices {
+		trustedKey, err := decodeDevicePublicKey(device.PublicKey)
+		if err != nil {
+			return false, err
+		}
+
+		if bytes.Equal(publicKey, trustedKey) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func saveTrustedDevices(devices TrustedDevices) error {
