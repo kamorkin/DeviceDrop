@@ -1,2 +1,10 @@
-.DS_Store
+/DeviceDrop
+/DeviceDrop.exe
+*.test
 *.exe
+*.out
+
+.DS_Store
+
+.vscode/
+.idea/
